@@ -1,5 +1,4 @@
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Graph {
 
@@ -379,48 +378,6 @@ public class Graph {
         return fulldfs;
     }
 
-    List<Graph> getBlocks() {
-        abstract class BlockHelper extends Graph {
-
-            private int time = 0;
-
-            static List<Graph> blockDfs(int startvertex) {
-                Set<Integer> visited = new HashSet<>();
-                Graph dfstree = new Graph(vertices.size());
-                Deque<Integer> stack = new ArrayDeque<>();
-                stack.push(startvertex);
-                visited.add(startvertex);
-                dfstree.addVertex(startvertex);
-
-                while (!stack.isEmpty()) {
-                    int current = stack.pop();
-                    List<Integer> neighbours = getNeighbours(current);
-                    Collections.reverse(neighbours);
-                    neighbours.forEach(n -> {
-                        if (!visited.contains(n)) {
-                            visited.add(n);
-                            dfstree.addVertex(n);
-                            Edge e = getEdge(current, n);
-                            if (e != null) {
-                                dfstree.addEdge(e);
-                            }
-                            stack.push(n);
-                        }
-                    });
-                }
-                return dfstree;
-            }
-        }
-
-        List<Graph> blocks = new ArrayList<>();
-
-        getComponents().forEach(c -> {
-            blocks.addAll(b.blockDfs(b.getVertices().iterator().next()));
-        });
-
-        return blocks;
-    }
-
     List<Edge> sortEdges() {
         List<Edge> list = new ArrayList<>(edges);
         Collections.sort(list);
@@ -436,6 +393,18 @@ public class Graph {
             gr.addEdge(edge);
         }
         return gr;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this)
+            return true;
+        if (!(o instanceof Graph))
+            return false;
+        Graph g = (Graph) o;
+        return vertices.equals(g.vertices) &&
+                edges.size() == g.edges.size() &&
+                edges.containsAll(g.edges);
     }
 
     public String edgeInfo() {

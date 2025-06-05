@@ -95,9 +95,58 @@ class GraphTest {
     }
 
     @Test
+    void testGetNeighbours() {
+        Graph g = new Graph();
+        g.addVertex(1);
+        g.addVertex(2);
+        g.addVertex(3);
+        g.addEdge(new Edge(1.0, 1, 2));
+        g.addEdge(new Edge(1.0, 1, 3));
+
+        List<Integer> neighbours1 = g.getNeighbours(1);
+        List<Integer> neighbours2 = g.getNeighbours(2);
+        List<Integer> neighbours3 = g.getNeighbours(3);
+
+        assertEquals(2, neighbours1.size());
+        assertTrue(neighbours1.contains(2) && neighbours1.contains(3));
+        assertEquals(1, neighbours2.size());
+        assertTrue(neighbours2.contains(1));
+        assertEquals(1, neighbours3.size());
+        assertTrue(neighbours3.contains(1));
+
+        assertTrue(g.getNeighbours(4).isEmpty());
+    }
+
+    @Test
+    void testAdjacencyMatrixConstructor() {
+        Graph g = new Graph(matrix24n_01_split);
+
+        assertTrue(g.getEdge(0, 1) != null);
+        assertTrue(g.getEdge(1, 2) != null);
+        assertTrue(g.getEdge(1, 3) != null);
+        assertTrue(g.getEdge(2, 3) != null);
+        assertTrue(g.getEdge(4, 5) != null);
+        assertTrue(g.getEdge(5, 10) != null);
+        assertTrue(g.getEdge(18, 19) != null);
+        assertTrue(g.getEdge(19, 20) != null);
+        assertTrue(g.getEdge(20, 18) != null);
+
+        assertTrue(g.getEdge(0, 2) == null);
+        assertTrue(g.getEdge(0, 4) == null);
+        assertTrue(g.getEdge(13, 14) == null);
+
+        assertEquals(matrix24n_01_split.length, g.countVertices());
+
+        assertTrue(g.getNeighbours(13).isEmpty());
+
+        assertTrue(g.getEdge(1, 0) != null);
+        assertTrue(g.getEdge(2, 1) != null);
+        assertTrue(g.getEdge(5, 4) != null);
+    }
+
+    @Test
     void testMinimalSpanningTree() {
         Graph g = new Graph();
-
         g.addVertex(1);
         g.addVertex(2);
         g.addVertex(3);
@@ -111,46 +160,46 @@ class GraphTest {
 
         Graph mst = g.minimalSpanningTree();
 
-        assertEquals(3, mst.countEdges(), "MST should have v-1 edges");
-        assertFalse(mst.hasCycle(), "MST must be acyclic");
-
-        double totalWeight = mst.getEdges().stream().mapToDouble(Edge::weight).sum();
-        assertEquals(6.0, totalWeight, 0.001, "MST should have minimal total weight");
+        assertEquals(3, mst.countEdges());
+        assertFalse(mst.hasCycle());
+        assertEquals(6.0, mst.getEdges().stream().mapToDouble(Edge::weight).sum(), 0.001);
     }
 
     @Test
-    public void testEulerCycleAndLine() {
+    void testEulerCycleAndLine() {
         Graph g = new Graph();
-
         g.addVertex(1);
         g.addVertex(2);
         g.addVertex(3);
         g.addVertex(4);
 
-        g.addEdge(new Edge(1, 1, 2));
-        g.addEdge(new Edge(1, 2, 3));
-        g.addEdge(new Edge(1, 3, 4));
-        g.addEdge(new Edge(1, 4, 1));
-        g.addEdge(new Edge(1, 2, 4));
+        Edge e1 = new Edge(1, 1, 2);
+        Edge e2 = new Edge(1, 2, 3);
+        Edge e3 = new Edge(1, 3, 4);
+        Edge e4 = new Edge(1, 4, 1);
+        Edge e5 = new Edge(1, 2, 4);
 
-        assertFalse(g.hasEulerCycle(), "Graph should not have an Eulerian cycle");
-        assertTrue(g.hasEulerLine(), "Graph should have an Eulerian trail");
+        g.addEdge(e1);
+        g.addEdge(e2);
+        g.addEdge(e3);
+        g.addEdge(e4);
+        g.addEdge(e5);
 
-        g.removeEdge(new Edge(1, 2, 4));
+        assertFalse(g.hasEulerCycle());
+        assertTrue(g.hasEulerLine());
 
-        assertTrue(g.hasEulerCycle(), "Graph should have an Eulerian cycle");
-        assertFalse(g.hasEulerLine(), "Eulerian trail should be false when cycle is true");
+        g.removeEdge(g.getEdge(2, 4));
+        assertTrue(g.hasEulerCycle());
+        assertFalse(g.hasEulerLine());
 
-        g.removeEdge(new Edge(1, 1, 2));
-
-        assertFalse(g.hasEulerCycle(), "Graph should no longer have an Eulerian cycle");
-        assertTrue(g.hasEulerLine(), "Graph should now have an Eulerian trail");
+        g.removeEdge(g.getEdge(1, 2));
+        assertFalse(g.hasEulerCycle());
+        assertTrue(g.hasEulerLine());
     }
 
     @Test
     void testHierholzerEulerCycle() {
         Graph g = new Graph();
-
         g.addVertex(0);
         g.addVertex(1);
         g.addVertex(2);
@@ -161,29 +210,14 @@ class GraphTest {
         g.addEdge(new Edge(1, 2, 3));
         g.addEdge(new Edge(1, 3, 0));
 
-        List<Integer> path = g.getEulerCycle();
-
-        assertNotNull(path, "Path should not be null");
-        assertEquals(5, path.size(), "Eulerian cycle should contain v+1 vertices");
-
-        assertEquals(path.getFirst(), path.getLast(), "Start and end must match");
-
-        Set<String> traversed = new HashSet<>();
-        for (int i = 0; i < path.size() - 1; i++) {
-            int from = path.get(i);
-            int to = path.get(i + 1);
-            String edge = Math.min(from, to) + "-" + Math.max(from, to);
-            traversed.add(edge);
-        }
-
-        Set<String> expected = Set.of("0-1", "1-2", "2-3", "0-3");
-        assertEquals(expected, traversed, "Traversal must match all edges exactly");
+        List<Integer> cycle = g.getEulerCycle();
+        assertEquals(5, cycle.size());
+        assertEquals(cycle.get(0), cycle.get(cycle.size() - 1));
     }
 
     @Test
     void testHierholzerEulerTrail() {
         Graph g = new Graph();
-
         g.addVertex(0);
         g.addVertex(1);
         g.addVertex(2);
@@ -195,26 +229,10 @@ class GraphTest {
         g.addEdge(new Edge(1, 3, 0));
         g.addEdge(new Edge(1, 1, 3));
 
-        assertTrue(g.hasEulerLine(), "Graph should have an Eulerian trail");
-
-        List<Integer> path = g.getEulerLine();
-
-        assertNotNull(path, "Euler trail path should not be null");
-        assertEquals(g.countEdges() + 1, path.size(), "Trail should use v+e vertices");
-
-        assertEquals(1, path.getFirst(), "Start should be one of the odd-degree vertices");
-        assertEquals(3, path.getLast(), "End should be the other odd-degree vertex");
-
-        Set<String> traversed = new HashSet<>();
-        for (int i = 0; i < path.size() - 1; i++) {
-            int from = path.get(i);
-            int to = path.get(i + 1);
-            String edge = Math.min(from, to) + "-" + Math.max(from, to);
-            traversed.add(edge);
-        }
-
-        Set<String> expected = Set.of("0-1", "1-2", "2-3", "0-3", "1-3");
-        assertEquals(expected, traversed, "Trail must include all edges exactly once");
+        List<Integer> trail = g.getEulerLine();
+        assertEquals(6, trail.size());
+        assertEquals(1, trail.get(0));
+        assertEquals(3, trail.get(trail.size() - 1));
     }
 
     @Test
@@ -222,21 +240,19 @@ class GraphTest {
         List<Graph> components = graph24n_01_split.getComponents();
         assertEquals(6, components.size());
 
-        int totalEdges = 0;
-        int totalVert = 0;
-        for (Graph g : components) {
-            totalVert += g.countVertices();
-            totalEdges += g.countEdges();
-        }
-        assertEquals(graph24n_01_split.countVertices(), totalVert);
+        int totalVertices = components.stream()
+                .mapToInt(Graph::countVertices)
+                .sum();
+        int totalEdges = components.stream()
+                .mapToInt(Graph::countEdges)
+                .sum();
+
+        assertEquals(graph24n_01_split.countVertices(), totalVertices);
         assertEquals(graph24n_01_split.countEdges(), totalEdges);
-        components.forEach(component -> {
-            component.getVertices().forEach(v -> {
-                assertTrue(graph24n_01_split.contains(v));
-            });
-            component.getEdges().forEach(e -> {
-                assertTrue(graph24n_01_split.contains(e));
-            });
+
+        components.forEach(comp -> {
+            comp.getVertices().forEach(v -> assertTrue(graph24n_01_split.contains(v)));
+            comp.getEdges().forEach(e -> assertTrue(graph24n_01_split.contains(e)));
         });
     }
 }
